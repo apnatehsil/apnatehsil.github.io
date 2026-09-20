@@ -21,7 +21,7 @@ if (p) {
 
 
 /* =========================================
-   APNATEHSIL CUSTOMER ORDER
+   APNATEHSIL CUSTOMER REQUEST
    ========================================= */
 
 function submitRequest() {
@@ -33,88 +33,77 @@ function submitRequest() {
         return;
     }
 
-    const button = formBox.querySelector('.btn.primary');
-
-    /* -----------------------------------------
-       COLLECT FIELDS
-       ----------------------------------------- */
-
-    const labels = formBox.querySelectorAll(
-        '.formgrid > label, #bank label'
+    const fields = formBox.querySelectorAll(
+        'input, select, textarea'
     );
 
-    const order = {};
     let missing = [];
+    let order = {};
 
-    labels.forEach(label => {
+    fields.forEach(field => {
 
-        const field = label.querySelector(
-            'input, select, textarea'
-        );
-
-        if (!field) return;
-
-        const labelText = label.childNodes[0]?.textContent
-            ?.trim()
-            .replace('*', '')
-            .trim();
-
-        if (!labelText) return;
-
-        let value = field.value.trim();
-
-        /* Bank details only apply to Bank Loan */
+        /* Ignore hidden bank section */
         if (
-            label.closest('#bank') &&
+            field.closest('#bank') &&
             p &&
             p.value !== 'Bank Loan'
         ) {
             return;
         }
 
-        /* Check required fields */
+        let label = '';
 
-        const isRequired =
-            labelText.includes('*') ||
-            [
-                'District',
-                'Tehsil',
-                'Village / Location',
-                'Owner Name',
-                'Customer Name',
-                'Mobile Number',
-                'Bank Branch'
-            ].some(name => labelText.startsWith(name));
-
-        if (isRequired && !value) {
-            missing.push(labelText.replace('*', '').trim());
-            return;
+        if (field.parentElement) {
+            label = field.parentElement.childNodes[0]?.textContent
+                ?.trim()
+                .replace('*', '')
+                .trim();
         }
 
-        /* Bank Name validation */
+        if (!label) {
+            label = field.name || 'Field';
+        }
 
+        let value = field.value.trim();
+
+        /* Required fields */
+        const requiredFields = [
+            'District',
+            'Tehsil',
+            'Village / Location',
+            'Owner Name',
+            'Customer Name',
+            'Mobile Number',
+            'Bank Branch'
+        ];
+
+        if (requiredFields.includes(label) && !value) {
+            missing.push(label);
+        }
+
+        /* Bank name */
         if (
-            labelText.startsWith('Bank Name') &&
+            label === 'Bank Name' &&
             p &&
             p.value === 'Bank Loan' &&
-            (value === 'Select Bank' || !value)
+            (value === '' || value === 'Select Bank')
         ) {
             missing.push('Bank Name');
-            return;
         }
 
-        order[labelText] = value || 'Not provided';
+        order[label] = value || 'Not provided';
     });
 
 
-    /* -----------------------------------------
+    /* =========================================
        VALIDATION
-       ----------------------------------------- */
+       ========================================= */
 
     if (missing.length > 0) {
 
         alert(
-            'Please complete the following required fields:\n\n' +
+            'Please complete the form to send your request.\n\n' +
+            'Please fill:\n' +
             missing.join('\n')
         );
 
@@ -122,9 +111,9 @@ function submitRequest() {
     }
 
 
-    /* -----------------------------------------
+    /* =========================================
        CREATE WHATSAPP MESSAGE
-       ----------------------------------------- */
+       ========================================= */
 
     let message =
 `🌐 *APNATEHSIL - NEW CUSTOMER REQUEST*
@@ -136,9 +125,7 @@ function submitRequest() {
 `;
 
     Object.entries(order).forEach(([key, value]) => {
-
         message += `*${key}:* ${value}\n`;
-
     });
 
     message +=
@@ -155,9 +142,9 @@ Our representative will contact the customer to confirm charges and processing.
 `;
 
 
-    /* -----------------------------------------
+    /* =========================================
        OPEN WHATSAPP
-       ----------------------------------------- */
+       ========================================= */
 
     const whatsappNumber = '919540234567';
 
@@ -167,33 +154,20 @@ Our representative will contact the customer to confirm charges and processing.
         '?text=' +
         encodeURIComponent(message);
 
-    if (button) {
-        button.disabled = true;
-        button.textContent = 'Opening WhatsApp...';
-    }
-
-    window.open(
-        whatsappURL,
-        '_blank'
-    );
+    window.open(whatsappURL, '_blank');
 
 
-    /* -----------------------------------------
+    /* =========================================
        SUCCESS MESSAGE
-       ----------------------------------------- */
+       ========================================= */
 
     setTimeout(() => {
 
         alert(
-            'Request prepared successfully!\n\n' +
-            'WhatsApp will open with your complete request. ' +
-            'Please press SEND in WhatsApp to submit it to ApnaTehsil.'
+            'Your request is ready.\n\n' +
+            'WhatsApp will open with your request details. ' +
+            'Please press SEND to submit the request to ApnaTehsil.'
         );
 
-        if (button) {
-            button.disabled = false;
-            button.textContent = 'Submit Request →';
-        }
-
-    }, 500);
+    }, 700);
 }
