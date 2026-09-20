@@ -21,44 +21,54 @@ if (p) {
 
 
 /* =========================================
-   APNATEHSIL CUSTOMER ORDER SUBMISSION
+   APNATEHSIL ORDER SUBMISSION
    ========================================= */
 
 async function submitRequest() {
 
     const formBox = document.querySelector('.formbox');
-    const button = document.querySelector('.formbox .btn.primary');
 
     if (!formBox) {
         alert('Request form not found.');
         return;
     }
 
-    // Prevent double submission
+    const button = formBox.querySelector('button');
+
     if (button) {
         button.disabled = true;
         button.textContent = 'Submitting...';
     }
 
-    // Open WhatsApp window immediately so browser doesn't block it
-    const waWindow = window.open('about:blank', '_blank');
+    /* Collect all form fields */
 
     const fields = formBox.querySelectorAll(
-        '.formgrid > label, .formgrid #bank label'
+        'input, select, textarea'
     );
 
-    const order = {};
+    let orderText =
+`🌐 APNATEHSIL - NEW CUSTOMER REQUEST
 
-    fields.forEach(label => {
+━━━━━━━━━━━━━━━━━━━━
+REQUEST DETAILS
+━━━━━━━━━━━━━━━━━━━━
+`;
 
-        const field = label.querySelector('input, select, textarea');
+    fields.forEach(field => {
 
-        if (!field) return;
+        if (field.closest('#bank') &&
+            p &&
+            p.value !== 'Bank Loan') {
+            return;
+        }
 
-        const labelText = label.childNodes[0]?.textContent
-            ?.trim()
-            .replace('*', '')
-            .trim();
+        let label = field.parentElement
+            ? field.parentElement.childNodes[0]?.textContent?.trim()
+            : '';
+
+        if (!label) {
+            label = field.name || 'Field';
+        }
 
         let value = field.value.trim();
 
@@ -66,75 +76,39 @@ async function submitRequest() {
             value = 'Not provided';
         }
 
-        // Ignore bank details if purpose is not Bank Loan
-        if (
-            label.closest('#bank') &&
-            p &&
-            p.value !== 'Bank Loan'
-        ) {
-            return;
-        }
-
-        order[labelText] = value;
+        orderText +=
+            `${label}: ${value}\n`;
     });
 
-
-    /* =========================================
-       CREATE ORDER MESSAGE
-       ========================================= */
-
-    let message =
-`🌐 APNA TEHSIL - NEW CUSTOMER REQUEST
-
-━━━━━━━━━━━━━━━━━━━━
-REQUEST DETAILS
-━━━━━━━━━━━━━━━━━━━━
-
-`;
-
-    Object.entries(order).forEach(([key, value]) => {
-        message += `${key}: ${value}\n`;
-    });
-
-    message += `
+    orderText +=
+`
 ━━━━━━━━━━━━━━━━━━━━
 PAYMENT
 ━━━━━━━━━━━━━━━━━━━━
 
 Payment method: Cash on visit
 
-Please contact the customer to confirm charges and processing.
+Please contact the customer to confirm charges.
 
 ApnaTehsil.com
 `;
 
 
     /* =========================================
-       SEND ORDER TO FORMSPREE
+       SEND EMAIL THROUGH FORMSPREE
        ========================================= */
 
     const formData = new FormData();
 
     formData.append(
         '_subject',
-        'New ApnaTehsil Customer Request'
+        'New ApnaTehsil Customer Order'
     );
 
     formData.append(
-        'request_type',
-        'ApnaTehsil Customer Order'
+        'message',
+        orderText
     );
-
-    formData.append(
-        'order_details',
-        message
-    );
-
-
-    // Also send every individual field
-    Object.entries(order).forEach(([key, value]) => {
-        formData.append(key, value);
-    });
 
 
     try {
@@ -153,27 +127,8 @@ ApnaTehsil.com
 
         if (!response.ok) {
 
-            let errorMessage = 'Unable to submit the request.';
-
-            try {
-                const data = await response.json();
-
-                if (data.errors && data.errors.length) {
-                    errorMessage = data.errors
-                        .map(error => error.message)
-                        .join('\n');
-                }
-
-            } catch (e) {}
-
-            if (waWindow) {
-                waWindow.close();
-            }
-
             alert(
-                'Request could not be submitted.\n\n' +
-                errorMessage +
-                '\n\nPlease try again.'
+                'Sorry, your request could not be submitted. Please try again.'
             );
 
             if (button) {
@@ -186,7 +141,7 @@ ApnaTehsil.com
 
 
         /* =========================================
-           OPEN WHATSAPP AFTER EMAIL SUCCESS
+           OPEN WHATSAPP
            ========================================= */
 
         const whatsappNumber = '919540234567';
@@ -195,33 +150,31 @@ ApnaTehsil.com
             'https://wa.me/' +
             whatsappNumber +
             '?text=' +
-            encodeURIComponent(message);
+            encodeURIComponent(orderText);
 
-        if (waWindow) {
-            waWindow.location.href = whatsappURL;
-        } else {
-            window.location.href = whatsappURL;
-        }
+        window.open(
+            whatsappURL,
+            '_blank'
+        );
 
 
         alert(
-            'Request submitted successfully!\n\n' +
-            'Your requirement has been received by ApnaTehsil. ' +
-            'WhatsApp will now open so the request can also be shared with our representative.'
+            'Request submitted successfully!\\n\\n' +
+            'We have received your requirement. ' +
+            'Our representative will contact you regarding charges and payment.'
         );
 
 
-        // Reset form after successful submission
-        const inputs = formBox.querySelectorAll(
-            'input, select, textarea'
-        );
+        /* Reset form */
 
-        inputs.forEach(field => {
+        fields.forEach(field => {
+
             if (field.tagName === 'SELECT') {
                 field.selectedIndex = 0;
             } else {
                 field.value = '';
             }
+
         });
 
         if (p) {
@@ -232,13 +185,8 @@ ApnaTehsil.com
 
     } catch (error) {
 
-        if (waWindow) {
-            waWindow.close();
-        }
-
         alert(
-            'There was a connection problem.\n\n' +
-            'Please try again.'
+            'Internet connection problem. Please try again.'
         );
 
     } finally {
