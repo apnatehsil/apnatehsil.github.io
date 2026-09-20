@@ -1,12 +1,12 @@
-const m = document.querySelector('.menu'),
-      n = document.querySelector('nav');
+const m = document.querySelector('.menu');
+const n = document.querySelector('nav');
 
 if (m) {
     m.onclick = () => n.classList.toggle('open');
 }
 
-const p = document.getElementById('purpose'),
-      b = document.getElementById('bank');
+const p = document.getElementById('purpose');
+const b = document.getElementById('bank');
 
 function showBank() {
     if (b && p) {
@@ -20,57 +20,232 @@ if (p) {
 }
 
 
-/* ================================
-   APNATEHSIL REQUEST SUBMISSION
-   Trial WhatsApp Number:
-   +91 9540234567
-================================ */
+/* =========================================
+   APNATEHSIL CUSTOMER ORDER SUBMISSION
+   ========================================= */
 
-function submitRequest() {
+async function submitRequest() {
 
-    const form = document.querySelector('.formbox');
+    const formBox = document.querySelector('.formbox');
+    const button = document.querySelector('.formbox .btn.primary');
 
-    if (!form) {
+    if (!formBox) {
         alert('Request form not found.');
         return;
     }
 
-    const labels = form.querySelectorAll('.formgrid label');
+    // Prevent double submission
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Submitting...';
+    }
 
-    let message = "🌐 *NEW APNATEHSIL REQUEST*%0A";
-    message += "━━━━━━━━━━━━━━━━━━━━%0A";
+    // Open WhatsApp window immediately so browser doesn't block it
+    const waWindow = window.open('about:blank', '_blank');
 
-    labels.forEach(label => {
+    const fields = formBox.querySelectorAll(
+        '.formgrid > label, .formgrid #bank label'
+    );
+
+    const order = {};
+
+    fields.forEach(label => {
 
         const field = label.querySelector('input, select, textarea');
 
         if (!field) return;
 
-        const fieldName = label.childNodes[0].textContent.trim();
+        const labelText = label.childNodes[0]?.textContent
+            ?.trim()
+            .replace('*', '')
+            .trim();
 
         let value = field.value.trim();
 
         if (!value) {
-            value = "Not provided";
+            value = 'Not provided';
         }
 
-        // Don't include hidden bank details when purpose is not Bank Loan
-        if (label.closest('#bank') && p && p.value !== 'Bank Loan') {
+        // Ignore bank details if purpose is not Bank Loan
+        if (
+            label.closest('#bank') &&
+            p &&
+            p.value !== 'Bank Loan'
+        ) {
             return;
         }
 
-        message += "%0A*" + encodeURIComponent(fieldName) + "*: ";
-        message += encodeURIComponent(value);
+        order[labelText] = value;
     });
 
-    message += "%0A%0A━━━━━━━━━━━━━━━━━━━━";
-    message += "%0APlease contact the customer to confirm charges and payment.";
-    message += "%0A%0A*ApnaTehsil.com*";
 
-    const whatsappNumber = "919540234567";
+    /* =========================================
+       CREATE ORDER MESSAGE
+       ========================================= */
 
-    const whatsappURL =
-        "https://wa.me/" + whatsappNumber + "?text=" + message;
+    let message =
+`🌐 APNA TEHSIL - NEW CUSTOMER REQUEST
 
-    window.open(whatsappURL, "_blank");
+━━━━━━━━━━━━━━━━━━━━
+REQUEST DETAILS
+━━━━━━━━━━━━━━━━━━━━
+
+`;
+
+    Object.entries(order).forEach(([key, value]) => {
+        message += `${key}: ${value}\n`;
+    });
+
+    message += `
+━━━━━━━━━━━━━━━━━━━━
+PAYMENT
+━━━━━━━━━━━━━━━━━━━━
+
+Payment method: Cash on visit
+
+Please contact the customer to confirm charges and processing.
+
+ApnaTehsil.com
+`;
+
+
+    /* =========================================
+       SEND ORDER TO FORMSPREE
+       ========================================= */
+
+    const formData = new FormData();
+
+    formData.append(
+        '_subject',
+        'New ApnaTehsil Customer Request'
+    );
+
+    formData.append(
+        'request_type',
+        'ApnaTehsil Customer Order'
+    );
+
+    formData.append(
+        'order_details',
+        message
+    );
+
+
+    // Also send every individual field
+    Object.entries(order).forEach(([key, value]) => {
+        formData.append(key, value);
+    });
+
+
+    try {
+
+        const response = await fetch(
+            'https://formspree.io/f/xkjgovkv',
+            {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }
+        );
+
+
+        if (!response.ok) {
+
+            let errorMessage = 'Unable to submit the request.';
+
+            try {
+                const data = await response.json();
+
+                if (data.errors && data.errors.length) {
+                    errorMessage = data.errors
+                        .map(error => error.message)
+                        .join('\n');
+                }
+
+            } catch (e) {}
+
+            if (waWindow) {
+                waWindow.close();
+            }
+
+            alert(
+                'Request could not be submitted.\n\n' +
+                errorMessage +
+                '\n\nPlease try again.'
+            );
+
+            if (button) {
+                button.disabled = false;
+                button.textContent = 'Submit Request →';
+            }
+
+            return;
+        }
+
+
+        /* =========================================
+           OPEN WHATSAPP AFTER EMAIL SUCCESS
+           ========================================= */
+
+        const whatsappNumber = '919540234567';
+
+        const whatsappURL =
+            'https://wa.me/' +
+            whatsappNumber +
+            '?text=' +
+            encodeURIComponent(message);
+
+        if (waWindow) {
+            waWindow.location.href = whatsappURL;
+        } else {
+            window.location.href = whatsappURL;
+        }
+
+
+        alert(
+            'Request submitted successfully!\n\n' +
+            'Your requirement has been received by ApnaTehsil. ' +
+            'WhatsApp will now open so the request can also be shared with our representative.'
+        );
+
+
+        // Reset form after successful submission
+        const inputs = formBox.querySelectorAll(
+            'input, select, textarea'
+        );
+
+        inputs.forEach(field => {
+            if (field.tagName === 'SELECT') {
+                field.selectedIndex = 0;
+            } else {
+                field.value = '';
+            }
+        });
+
+        if (p) {
+            p.value = 'Bank Loan';
+            showBank();
+        }
+
+
+    } catch (error) {
+
+        if (waWindow) {
+            waWindow.close();
+        }
+
+        alert(
+            'There was a connection problem.\n\n' +
+            'Please try again.'
+        );
+
+    } finally {
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = 'Submit Request →';
+        }
+    }
 }
