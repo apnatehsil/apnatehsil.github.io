@@ -21,10 +21,10 @@ if (p) {
 
 
 /* =========================================
-   APNATEHSIL ORDER SUBMISSION
+   APNATEHSIL CUSTOMER ORDER
    ========================================= */
 
-async function submitRequest() {
+function submitRequest() {
 
     const formBox = document.querySelector('.formbox');
 
@@ -33,167 +33,167 @@ async function submitRequest() {
         return;
     }
 
-    const button = formBox.querySelector('button');
+    const button = formBox.querySelector('.btn.primary');
 
-    if (button) {
-        button.disabled = true;
-        button.textContent = 'Submitting...';
-    }
+    /* -----------------------------------------
+       COLLECT FIELDS
+       ----------------------------------------- */
 
-    /* Collect all form fields */
-
-    const fields = formBox.querySelectorAll(
-        'input, select, textarea'
+    const labels = formBox.querySelectorAll(
+        '.formgrid > label, #bank label'
     );
 
-    let orderText =
-`🌐 APNATEHSIL - NEW CUSTOMER REQUEST
+    const order = {};
+    let missing = [];
 
-━━━━━━━━━━━━━━━━━━━━
-REQUEST DETAILS
-━━━━━━━━━━━━━━━━━━━━
-`;
+    labels.forEach(label => {
 
-    fields.forEach(field => {
+        const field = label.querySelector(
+            'input, select, textarea'
+        );
 
-        if (field.closest('#bank') &&
-            p &&
-            p.value !== 'Bank Loan') {
-            return;
-        }
+        if (!field) return;
 
-        let label = field.parentElement
-            ? field.parentElement.childNodes[0]?.textContent?.trim()
-            : '';
+        const labelText = label.childNodes[0]?.textContent
+            ?.trim()
+            .replace('*', '')
+            .trim();
 
-        if (!label) {
-            label = field.name || 'Field';
-        }
+        if (!labelText) return;
 
         let value = field.value.trim();
 
-        if (!value) {
-            value = 'Not provided';
-        }
-
-        orderText +=
-            `${label}: ${value}\n`;
-    });
-
-    orderText +=
-`
-━━━━━━━━━━━━━━━━━━━━
-PAYMENT
-━━━━━━━━━━━━━━━━━━━━
-
-Payment method: Cash on visit
-
-Please contact the customer to confirm charges.
-
-ApnaTehsil.com
-`;
-
-
-    /* =========================================
-       SEND EMAIL THROUGH FORMSPREE
-       ========================================= */
-
-    const formData = new FormData();
-
-    formData.append(
-        '_subject',
-        'New ApnaTehsil Customer Order'
-    );
-
-    formData.append(
-        'message',
-        orderText
-    );
-
-
-    try {
-
-        const response = await fetch(
-            'https://formspree.io/f/xkjgovkv',
-            {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            }
-        );
-
-
-        if (!response.ok) {
-
-            alert(
-                'Sorry, your request could not be submitted. Please try again.'
-            );
-
-            if (button) {
-                button.disabled = false;
-                button.textContent = 'Submit Request →';
-            }
-
+        /* Bank details only apply to Bank Loan */
+        if (
+            label.closest('#bank') &&
+            p &&
+            p.value !== 'Bank Loan'
+        ) {
             return;
         }
 
+        /* Check required fields */
 
-        /* =========================================
-           OPEN WHATSAPP
-           ========================================= */
+        const isRequired =
+            labelText.includes('*') ||
+            [
+                'District',
+                'Tehsil',
+                'Village / Location',
+                'Owner Name',
+                'Customer Name',
+                'Mobile Number',
+                'Bank Branch'
+            ].some(name => labelText.startsWith(name));
 
-        const whatsappNumber = '919540234567';
-
-        const whatsappURL =
-            'https://wa.me/' +
-            whatsappNumber +
-            '?text=' +
-            encodeURIComponent(orderText);
-
-        window.open(
-            whatsappURL,
-            '_blank'
-        );
-
-
-        alert(
-            'Request submitted successfully!\\n\\n' +
-            'We have received your requirement. ' +
-            'Our representative will contact you regarding charges and payment.'
-        );
-
-
-        /* Reset form */
-
-        fields.forEach(field => {
-
-            if (field.tagName === 'SELECT') {
-                field.selectedIndex = 0;
-            } else {
-                field.value = '';
-            }
-
-        });
-
-        if (p) {
-            p.value = 'Bank Loan';
-            showBank();
+        if (isRequired && !value) {
+            missing.push(labelText.replace('*', '').trim());
+            return;
         }
 
+        /* Bank Name validation */
 
-    } catch (error) {
+        if (
+            labelText.startsWith('Bank Name') &&
+            p &&
+            p.value === 'Bank Loan' &&
+            (value === 'Select Bank' || !value)
+        ) {
+            missing.push('Bank Name');
+            return;
+        }
+
+        order[labelText] = value || 'Not provided';
+    });
+
+
+    /* -----------------------------------------
+       VALIDATION
+       ----------------------------------------- */
+
+    if (missing.length > 0) {
 
         alert(
-            'Internet connection problem. Please try again.'
+            'Please complete the following required fields:\n\n' +
+            missing.join('\n')
         );
 
-    } finally {
+        return;
+    }
+
+
+    /* -----------------------------------------
+       CREATE WHATSAPP MESSAGE
+       ----------------------------------------- */
+
+    let message =
+`🌐 *APNATEHSIL - NEW CUSTOMER REQUEST*
+
+━━━━━━━━━━━━━━━━━━━━
+*REQUEST DETAILS*
+━━━━━━━━━━━━━━━━━━━━
+
+`;
+
+    Object.entries(order).forEach(([key, value]) => {
+
+        message += `*${key}:* ${value}\n`;
+
+    });
+
+    message +=
+`
+━━━━━━━━━━━━━━━━━━━━
+*PAYMENT*
+━━━━━━━━━━━━━━━━━━━━
+
+Payment: Cash on visit
+
+Our representative will contact the customer to confirm charges and processing.
+
+*ApnaTehsil.com*
+`;
+
+
+    /* -----------------------------------------
+       OPEN WHATSAPP
+       ----------------------------------------- */
+
+    const whatsappNumber = '919540234567';
+
+    const whatsappURL =
+        'https://wa.me/' +
+        whatsappNumber +
+        '?text=' +
+        encodeURIComponent(message);
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Opening WhatsApp...';
+    }
+
+    window.open(
+        whatsappURL,
+        '_blank'
+    );
+
+
+    /* -----------------------------------------
+       SUCCESS MESSAGE
+       ----------------------------------------- */
+
+    setTimeout(() => {
+
+        alert(
+            'Request prepared successfully!\n\n' +
+            'WhatsApp will open with your complete request. ' +
+            'Please press SEND in WhatsApp to submit it to ApnaTehsil.'
+        );
 
         if (button) {
             button.disabled = false;
             button.textContent = 'Submit Request →';
         }
-    }
+
+    }, 500);
 }
