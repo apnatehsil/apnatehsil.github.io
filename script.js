@@ -21,7 +21,7 @@ if (p) {
 
 
 /* =========================================
-   APNATEHSIL CUSTOMER REQUEST
+   APNATEHSIL ORDER SYSTEM
    ========================================= */
 
 function submitRequest() {
@@ -42,7 +42,7 @@ function submitRequest() {
 
     fields.forEach(field => {
 
-        /* Ignore hidden bank section */
+        // Ignore hidden bank fields when purpose is not Bank Loan
         if (
             field.closest('#bank') &&
             p &&
@@ -66,7 +66,6 @@ function submitRequest() {
 
         let value = field.value.trim();
 
-        /* Required fields */
         const requiredFields = [
             'District',
             'Tehsil',
@@ -77,11 +76,13 @@ function submitRequest() {
             'Bank Branch'
         ];
 
-        if (requiredFields.includes(label) && !value) {
+        if (
+            requiredFields.includes(label) &&
+            !value
+        ) {
             missing.push(label);
         }
 
-        /* Bank name */
         if (
             label === 'Bank Name' &&
             p &&
@@ -112,6 +113,36 @@ function submitRequest() {
 
 
     /* =========================================
+       GENERATE UNIQUE ORDER ID
+       ========================================= */
+
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+
+    const random = Math.floor(100 + Math.random() * 900);
+
+    const orderId =
+        `AT-${year}${month}${day}-${hours}${minutes}${seconds}-${random}`;
+
+    const date =
+        `${day}-${month}-${year}`;
+
+    const time =
+        now.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+
+
+    /* =========================================
        CREATE WHATSAPP MESSAGE
        ========================================= */
 
@@ -119,9 +150,13 @@ function submitRequest() {
 `🌐 *APNATEHSIL - NEW CUSTOMER REQUEST*
 
 ━━━━━━━━━━━━━━━━━━━━
-*REQUEST DETAILS*
+*ORDER ID:* ${orderId}
+*DATE:* ${date}
+*TIME:* ${time}
 ━━━━━━━━━━━━━━━━━━━━
 
+*REQUEST DETAILS*
+━━━━━━━━━━━━━━━━━━━━
 `;
 
     Object.entries(order).forEach(([key, value]) => {
@@ -143,10 +178,65 @@ Our representative will contact the customer to confirm charges and processing.
 
 
     /* =========================================
+       SEND TO GOOGLE SHEETS
+       ========================================= */
+
+    const googleScriptURL =
+        'https://script.google.com/macros/s/AKfycbyGSaUI59n53nlCTnC5wFSeCoBMGjW8oqE5gVWY4PSPhMoC9Tex1WRy66GltPKKX4Qw/exec';
+
+
+    const sheetData = {
+
+        orderId: orderId,
+        date: date,
+        time: time,
+
+        service: order['Service Required'] || '',
+        processing: order['Processing Option'] || '',
+        district: order['District'] || '',
+        tehsil: order['Tehsil'] || '',
+        village: order['Village / Location'] || '',
+        owner: order['Owner Name'] || '',
+        khasra: order['Khewat / Khatoni / Khasra'] || '',
+        customer: order['Customer Name'] || '',
+        mobile: order['Mobile Number'] || '',
+        purpose: order['Purpose'] || '',
+        bank: order['Bank Name'] || '',
+        branch: order['Bank Branch'] || '',
+        additional: order['Additional Information'] || ''
+    };
+
+
+    /* =========================================
+       SEND DATA TO GOOGLE APPS SCRIPT
+       ========================================= */
+
+    fetch(googleScriptURL, {
+
+        method: 'POST',
+
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+
+        body: JSON.stringify(sheetData)
+
+    }).catch(error => {
+
+        console.log(
+            'Google Sheet submission error:',
+            error
+        );
+
+    });
+
+
+    /* =========================================
        OPEN WHATSAPP
        ========================================= */
 
-    const whatsappNumber = '919540234567';
+    const whatsappNumber =
+        '919540234567';
 
     const whatsappURL =
         'https://wa.me/' +
@@ -154,19 +244,23 @@ Our representative will contact the customer to confirm charges and processing.
         '?text=' +
         encodeURIComponent(message);
 
-    window.open(whatsappURL, '_blank');
+    window.open(
+        whatsappURL,
+        '_blank'
+    );
 
 
     /* =========================================
-       SUCCESS MESSAGE
+       SHOW ORDER ID
        ========================================= */
 
     setTimeout(() => {
 
         alert(
-            'Your request is ready.\n\n' +
-            'WhatsApp will open with your request details. ' +
-            'Please press SEND to submit the request to ApnaTehsil.'
+            'Request created successfully!\n\n' +
+            'Order ID: ' + orderId +
+            '\n\n' +
+            'Please press SEND in WhatsApp to submit the request.'
         );
 
     }, 700);
