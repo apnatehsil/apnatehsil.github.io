@@ -61,17 +61,16 @@
 <option>Rewari</option><option>Rohtak</option><option>Sirsa</option><option>Sonipat</option>
 <option>Yamunanagar</option>
 </select></label>
-<label>Tehsil *<select id="tehsilSelect" name="tehsil" required disabled>
-<option value="">Select District First</option>
-</select></label><label>Village / Location *<input placeholder="Village / property location"></label><label>Owner Name *<input placeholder="Name on property record"></label><label>Khewat / Khatoni / Khasra<input placeholder="If available"></label><label>Customer Name *<input placeholder="Your name"></label><label>Mobile Number *<input placeholder="+91"></label>
+<label>Tehsil *<select id="tehsilSelect" name="tehsil" required disabled><option value="">Select District First</option></select></label>
+<label>Sub-Tehsil <select id="subTehsilSelect" name="subTehsil" disabled><option value="">Select Tehsil First</option></select></label><label>Village / Location *<input placeholder="Village / property location"></label><label>Owner Name *<input placeholder="Name on property record"></label><label>Khewat / Khatoni / Khasra<input placeholder="If available"></label><label>Customer Name *<input placeholder="Your name"></label><label>Mobile Number *<input placeholder="+91"></label>
 <label>Purpose *<select id="purpose"><option>Bank Loan</option><option>Property Purchase / Sale</option><option>Legal / TSR</option><option>Personal</option><option>Other</option></select></label>
 <div id="bank" class="bank"><label>Bank Name *<select><option>Select Bank</option><option>ICICI Bank</option><option>HDFC Bank</option><option>Axis Bank</option><option>Punjab National Bank</option><option>Bank of Baroda</option><option>Kotak Mahindra Bank</option><option>Other</option></select></label><label>Bank Branch *<input placeholder="Branch name / location"></label></div>
 <label class="full">Additional Information<textarea placeholder="Any document/year/details you already have"></textarea></label></div>
 <div class="paynote"><b>Payment:</b> Final charges will be confirmed based on the requested documents and location. For now, payment can be collected by our authorized representative during the visit. Online payment will be available soon.</div><button class="btn primary" onclick="submitRequest()">Submit Request →</button>
 <small>After submitting, our representative will contact you to confirm the requirement and payment method.</small></div></section>
-<section id="contact" class="cta"><div><div class="eyebrow">NEED HELP?</div><h2>Talk to ApnaTehsil</h2><p>For document requirements, pricing or processing options.</p></div><div class="actions"><a class="btn white" href="https://wa.me/919540234567">◉ WhatsApp</a><a class="btn outline" href="tel:+9195xx234567">☎ Call</a></div></section>
+<section id="contact" class="cta"><div><div class="eyebrow">NEED HELP?</div><h2>Talk to ApnaTehsil</h2><p>For document requirements, pricing or processing options.</p></div><div class="actions"><a class="btn white" href="https://wa.me/919540234567">◉ WhatsApp</a><a class="btn outline" href="tel:+919540234567">☎ Call</a></div></section>
 </main>
-<footer><div class="foot"><div><a class="brand"><img src="logo.svg"><span><b>ApnaTehsil</b><small>Aapka Tehsil Saathi</small></span></a><p>Property & land-document assistance made simpler.</p></div><div><h4>Services</h4><a href="#services">Certified Deed</a><a href="#services">Jamabandi</a><a href="#services">Mutation</a><a href="#services">13-Year Title Chain</a><a href="#services">Rent Agreement</a></div><div><h4>Contact</h4><p>☎ +91 9540234567</p><p>✉ apnatehsil@gmail.com</p><p>📍 Haryana, India</p></div><div><h4>Important</h4><p>Independent private assistance service.</p></div></div><div class="copy">© 2026 ApnaTehsil.com | All Rights Reserved</div></footer>
+<footer><div class="foot"><div><a class="brand"><img src="logo.svg"><span><b>ApnaTehsil</b><small>Aapka Tehsil Saathi</small></span></a><p>Property & land-document assistance made simpler.</p></div><div><h4>Services</h4><a href="#services">Certified Deed</a><a href="#services">Jamabandi</a><a href="#services">Mutation</a><a href="#services">13-Year Title Chain</a><a href="#services">Rent Agreement</a></div><div><h4>Contact</h4><p>☎ +91 95xx234567</p><p>✉ apnatehsil@gmail.com</p><p>📍 Haryana, India</p></div><div><h4>Important</h4><p>Independent private assistance service.</p></div></div><div class="copy">© 2026 ApnaTehsil.com | All Rights Reserved</div></footer>
 <a class="wa" href="https://wa.me/919540234567">◉</a><script src="script.js"></script><script>
 (function(){
  const documents=[
@@ -113,60 +112,94 @@
 })();</script>
 
 <script>
-/* ApnaTehsil: dependent Haryana District -> Tehsil dropdowns */
+/* ApnaTehsil dependent District -> Tehsil -> Sub-Tehsil dropdowns.
+   Lists are an initial reference and should be verified against current official records. */
 (function () {
   const districtSelect = document.getElementById('districtSelect');
   const tehsilSelect = document.getElementById('tehsilSelect');
-  if (!districtSelect || !tehsilSelect) return;
+  const subTehsilSelect = document.getElementById('subTehsilSelect');
+  if (!districtSelect || !tehsilSelect || !subTehsilSelect) return;
 
-  const districtTehsils = {
-    "Ambala": ["Ambala", "Ambala Cantt", "Barara", "Naraingarh"],
-    "Bhiwani": ["Bhiwani", "Bawani Khera", "Loharu", "Tosham", "Siwani"],
-    "Charkhi Dadri": ["Charkhi Dadri", "Badhra"],
-    "Faridabad": ["Faridabad", "Ballabgarh", "Badkhal"],
-    "Fatehabad": ["Fatehabad", "Tohana", "Ratia"],
-    "Gurugram": ["Gurugram", "Sohna", "Pataudi", "Farrukh Nagar", "Manesar"],
-    "Hisar": ["Hisar", "Hansi", "Narnaund", "Barwala", "Bass", "Adampur"],
-    "Jhajjar": ["Badli", "Bahadurgarh", "Beri", "Jhajjar", "Matanhail"],
-    "Jind": ["Jind", "Narwana", "Safidon", "Julana", "Uchana", "Alewa"],
-    "Kaithal": ["Kaithal", "Guhla", "Fatehpur Pundri", "Kalayat"],
-    "Karnal": ["Karnal", "Assandh", "Gharaunda", "Indri", "Nilokheri"],
-    "Kurukshetra": ["Thanesar", "Ladwa", "Shahabad", "Pehowa"],
-    "Mahendragarh": ["Mahendragarh", "Narnaul", "Nangal Chaudhary", "Ateli", "Kanina"],
-    "Nuh": ["Nuh", "Ferozepur Jhirka", "Punhana", "Tauru"],
-    "Palwal": ["Palwal", "Hathin", "Hodal"],
-    "Panchkula": ["Panchkula", "Kalka", "Raipur Rani"],
-    "Panipat": ["Panipat", "Samalkha", "Israna", "Bapoli", "Madlauda"],
-    "Rewari": ["Rewari", "Kosli", "Bawal"],
-    "Rohtak": ["Lakhan Majra"],
-    "Sirsa": ["Sirsa", "Rania", "Dabwali", "Ellenabad", "Nathusari Chopta", "Kalanwali"],
-    "Sonipat": ["Sonipat", "Gohana", "Ganaur", "Kharkhoda"],
-    "Yamunanagar": ["Jagadhri", "Radaur", "Bilaspur", "Chhachhrauli"]
+  const districtData = {
+    "Ambala": {
+      tehsils: ["Ambala", "Ambala Cantt", "Barara", "Naraingarh"],
+      subTehsils: {
+        "Ambala": ["Shahzadpur"],
+        "Ambala Cantt": [],
+        "Barara": ["Saha"],
+        "Naraingarh": ["Sadhora"]
+      }
+    },
+    "Bhiwani": {
+      tehsils: ["Bhiwani", "Bawani Khera", "Loharu", "Tosham", "Siwani"],
+      subTehsils: {
+        "Bhiwani": ["Behal"],
+        "Bawani Khera": [],
+        "Loharu": ["Kairu"],
+        "Tosham": ["Jui"],
+        "Siwani": ["Badhra"]
+      }
+    },
+    "Charkhi Dadri": { tehsils: ["Charkhi Dadri", "Badhra"], subTehsils: { "Charkhi Dadri": ["Bond Kalan"], "Badhra": [] } },
+    "Faridabad": { tehsils: ["Faridabad", "Ballabgarh", "Badkhal"], subTehsils: { "Faridabad": [], "Ballabgarh": [], "Badkhal": [] } },
+    "Fatehabad": { tehsils: ["Fatehabad", "Tohana", "Ratia"], subTehsils: { "Fatehabad": ["Bhuna"], "Tohana": ["Jakhal"], "Ratia": ["Bhattu Kalan"] } },
+    "Gurugram": { tehsils: ["Gurugram", "Sohna", "Pataudi", "Farrukh Nagar", "Manesar"], subTehsils: { "Gurugram": ["Wazirabad"], "Sohna": ["Badshahpur"], "Pataudi": ["Haily Mandi"], "Farrukh Nagar": [], "Manesar": [] } },
+    "Hisar": { tehsils: ["Hisar", "Hansi", "Narnaund", "Barwala", "Bass", "Adampur"], subTehsils: { "Hisar": ["Agroha"], "Hansi": ["Narnaund Rural"], "Narnaund": [], "Barwala": ["Uklana"], "Bass": [], "Adampur": [] } },
+    "Jhajjar": { tehsils: ["Badli", "Bahadurgarh", "Beri", "Jhajjar", "Matanhail"], subTehsils: { "Badli": [], "Bahadurgarh": [], "Beri": [], "Jhajjar": [], "Matanhail": [] } },
+    "Jind": { tehsils: ["Jind", "Narwana", "Safidon", "Julana", "Uchana", "Alewa"], subTehsils: { "Jind": ["Pillukhera"], "Narwana": [], "Safidon": [], "Julana": [], "Uchana": [], "Alewa": [] } },
+    "Kaithal": { tehsils: ["Kaithal", "Guhla", "Fatehpur Pundri", "Kalayat"], subTehsils: { "Kaithal": ["Rajound"], "Guhla": ["Siwan"], "Fatehpur Pundri": [], "Kalayat": [] } },
+    "Karnal": { tehsils: ["Karnal", "Assandh", "Gharaunda", "Indri", "Nilokheri"], subTehsils: { "Karnal": ["Nissing"], "Assandh": ["Jundla"], "Gharaunda": ["Munak"], "Indri": ["Biana"], "Nilokheri": [] } },
+    "Kurukshetra": { tehsils: ["Thanesar", "Ladwa", "Shahabad", "Pehowa"], subTehsils: { "Thanesar": ["Babain"], "Ladwa": [], "Shahabad": ["Ismailabad"], "Pehowa": [] } },
+    "Mahendragarh": { tehsils: ["Mahendragarh", "Narnaul", "Nangal Chaudhary", "Ateli", "Kanina"], subTehsils: { "Mahendragarh": ["Satnali"], "Narnaul": [], "Nangal Chaudhary": [], "Ateli": [], "Kanina": [] } },
+    "Nuh": { tehsils: ["Nuh", "Ferozepur Jhirka", "Punhana", "Tauru"], subTehsils: { "Nuh": ["Nagina"], "Ferozepur Jhirka": [], "Punhana": ["Pingwan"], "Tauru": [] } },
+    "Palwal": { tehsils: ["Palwal", "Hathin", "Hodal"], subTehsils: { "Palwal": ["Prithla"], "Hathin": [], "Hodal": [] } },
+    "Panchkula": { tehsils: ["Panchkula", "Kalka", "Raipur Rani"], subTehsils: { "Panchkula": ["Barwala"], "Kalka": ["Pinjore"], "Raipur Rani": [] } },
+    "Panipat": { tehsils: ["Panipat", "Samalkha", "Israna", "Bapoli", "Madlauda"], subTehsils: { "Panipat": ["Karnal Road"], "Samalkha": [], "Israna": [], "Bapoli": [], "Madlauda": [] } },
+    "Rewari": { tehsils: ["Rewari", "Kosli", "Bawal"], subTehsils: { "Rewari": ["Dharuhera"], "Kosli": [], "Bawal": [] } },
+    "Rohtak": { tehsils: ["Rohtak", "Meham", "Sampla"], subTehsils: { "Rohtak": [], "Meham": [], "Sampla": [] } },
+    "Sirsa": { tehsils: ["Sirsa", "Rania", "Dabwali", "Ellenabad", "Nathusari Chopta", "Kalanwali"], subTehsils: { "Sirsa": ["Baragudha"], "Rania": [], "Dabwali": [], "Ellenabad": [], "Nathusari Chopta": [], "Kalanwali": [] } },
+    "Sonipat": { tehsils: ["Sonipat", "Gohana", "Ganaur", "Kharkhoda"], subTehsils: { "Sonipat": ["Rai"], "Gohana": [], "Ganaur": [], "Kharkhoda": [] } },
+    "Yamunanagar": { tehsils: ["Jagadhri", "Radaur", "Bilaspur", "Chhachhrauli"], subTehsils: { "Jagadhri": ["Mustafabad"], "Radaur": [], "Bilaspur": [], "Chhachhrauli": [] } }
   };
+
+  function resetSelect(select, label, disabled) {
+    select.replaceChildren();
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = label;
+    select.appendChild(option);
+    select.disabled = disabled;
+  }
 
   function populateTehsils() {
     const district = districtSelect.value;
-    const tehsils = districtTehsils[district] || [];
-    tehsilSelect.replaceChildren();
-
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = district
-      ? (tehsils.length ? 'Select Tehsil' : 'Tehsil list not configured')
-      : 'Select District First';
-    tehsilSelect.appendChild(placeholder);
-
-    tehsils.forEach(function (tehsil) {
+    const data = districtData[district];
+    resetSelect(tehsilSelect, district ? 'Select Tehsil' : 'Select District First', !data);
+    resetSelect(subTehsilSelect, 'Select Tehsil First', true);
+    if (!data) return;
+    data.tehsils.forEach(function (name) {
       const option = document.createElement('option');
-      option.value = tehsil;
-      option.textContent = tehsil;
+      option.value = name;
+      option.textContent = name;
       tehsilSelect.appendChild(option);
     });
+  }
 
-    tehsilSelect.disabled = !district || tehsils.length === 0;
+  function populateSubTehsils() {
+    const district = districtSelect.value;
+    const tehsil = tehsilSelect.value;
+    const list = districtData[district]?.subTehsils?.[tehsil] || [];
+    resetSelect(subTehsilSelect, list.length ? 'Select Sub-Tehsil (if applicable)' : 'No Sub-Tehsil Listed (optional)', !tehsil || list.length === 0);
+    list.forEach(function (name) {
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      subTehsilSelect.appendChild(option);
+    });
   }
 
   districtSelect.addEventListener('change', populateTehsils);
+  tehsilSelect.addEventListener('change', populateSubTehsils);
   populateTehsils();
 })();
 </script>
